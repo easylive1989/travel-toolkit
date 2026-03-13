@@ -1,12 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Settings, Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react'
+import { Settings, Trash2, Plus, Pencil } from 'lucide-react'
 
 // Finance
 import { ExchangeRate } from '@/features/finance/ExchangeRate'
@@ -72,8 +71,11 @@ function loadGroups(): Group[] {
 function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>(loadSelected)
   const [groups, setGroups] = useState<Group[]>(loadGroups)
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null)
+  const [editingName, setEditingName] = useState('')
   const [newGroupName, setNewGroupName] = useState('')
-  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
+  const [showNewGroupInput, setShowNewGroupInput] = useState(false)
+  const newGroupInputRef = useRef<HTMLInputElement>(null)
 
   const saveGroups = (next: Group[]) => {
     setGroups(next)
@@ -94,30 +96,36 @@ function App() {
     if (!newGroupName.trim()) return
     saveGroups([...groups, { id: crypto.randomUUID(), name: newGroupName.trim(), cardIds: [] }])
     setNewGroupName('')
+    setShowNewGroupInput(false)
   }
 
   const deleteGroup = (id: string) => {
     saveGroups(groups.filter((g) => g.id !== id))
-    if (expandedGroupId === id) setExpandedGroupId(null)
+    setEditingGroup(null)
+  }
+
+  const renameGroup = () => {
+    if (!editingGroup || !editingName.trim()) return
+    saveGroups(groups.map((g) => g.id === editingGroup.id ? { ...g, name: editingName.trim() } : g))
+    setEditingGroup((prev) => prev ? { ...prev, name: editingName.trim() } : null)
   }
 
   const toggleCardInGroup = (groupId: string, cardId: string) => {
     const targetGroup = groups.find((g) => g.id === groupId)!
     const isInGroup = targetGroup.cardIds.includes(cardId)
-    saveGroups(
-      groups.map((g) => {
-        if (g.id === groupId) {
-          return isInGroup
-            ? { ...g, cardIds: g.cardIds.filter((c) => c !== cardId) }
-            : { ...g, cardIds: [...g.cardIds, cardId] }
-        }
-        // 加入新群組時，從其他群組移除（一張卡只屬於一個群組）
-        if (!isInGroup) {
-          return { ...g, cardIds: g.cardIds.filter((c) => c !== cardId) }
-        }
-        return g
-      })
-    )
+    const updated = groups.map((g) => {
+      if (g.id === groupId) {
+        return isInGroup
+          ? { ...g, cardIds: g.cardIds.filter((c) => c !== cardId) }
+          : { ...g, cardIds: [...g.cardIds, cardId] }
+      }
+      if (!isInGroup) {
+        return { ...g, cardIds: g.cardIds.filter((c) => c !== cardId) }
+      }
+      return g
+    })
+    saveGroups(updated)
+    setEditingGroup(updated.find((g) => g.id === groupId) ?? null)
   }
 
   const groupedCardIds = new Set(groups.flatMap((g) => g.cardIds))
@@ -128,97 +136,121 @@ function App() {
       <Header />
 
       <main className="flex-1 w-full max-w-md mx-auto p-4 space-y-4">
-        <div className="flex justify-end">
+
+        {/* 工具列：群組 chips + 新增群組 + 自訂工具 */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-0.5">
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => { setEditingGroup(group); setEditingName(group.name) }}
+                className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium hover:bg-muted transition-colors"
+              >
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+                {group.name}
+              </button>
+            ))}
+
+            {showNewGroupInput ? (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Input
+                  ref={newGroupInputRef}
+                  className="h-7 w-28 text-xs"
+                  placeholder="群組名稱"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addGroup()
+                    if (e.key === 'Escape') { setShowNewGroupInput(false); setNewGroupName('') }
+                  }}
+                  autoFocus
+                />
+                <Button size="icon-xs" onClick={addGroup} disabled={!newGroupName.trim()}>
+                  <Plus />
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowNewGroupInput(true)}
+                className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                新增群組
+              </button>
+            )}
+          </div>
+
           <Dialog>
             <DialogTrigger render={
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="icon-sm" className="flex-shrink-0">
                 <Settings className="h-4 w-4" />
-                自訂工具
               </Button>
             } />
             <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>管理工具</DialogTitle>
+                <DialogTitle>自訂工具</DialogTitle>
               </DialogHeader>
+              <div className="space-y-3 pt-2">
+                {ALL_CARDS.map((card) => (
+                  <label key={card.id} className="flex items-center gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={selectedIds.includes(card.id)}
+                      onCheckedChange={() => toggleSelected(card.id)}
+                    />
+                    <span>{card.label}</span>
+                  </label>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-              <Tabs defaultValue="tools">
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="tools">工具</TabsTrigger>
-                  <TabsTrigger value="groups">群組</TabsTrigger>
-                </TabsList>
+        {/* 群組編輯 Dialog */}
+        <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>編輯群組</DialogTitle>
+            </DialogHeader>
+            {editingGroup && (
+              <div className="space-y-4 pt-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && renameGroup()}
+                    placeholder="群組名稱"
+                  />
+                  <Button size="sm" onClick={renameGroup} disabled={!editingName.trim()}>
+                    更名
+                  </Button>
+                </div>
 
-                <TabsContent value="tools" className="space-y-3 pt-3">
-                  {ALL_CARDS.map((card) => (
-                    <label key={card.id} className="flex items-center gap-3 cursor-pointer">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">選擇此群組包含的工具：</p>
+                  {ALL_CARDS.filter((c) => selectedIds.includes(c.id)).map((card) => (
+                    <label key={card.id} className="flex items-center gap-3 cursor-pointer text-sm">
                       <Checkbox
-                        checked={selectedIds.includes(card.id)}
-                        onCheckedChange={() => toggleSelected(card.id)}
+                        checked={editingGroup.cardIds.includes(card.id)}
+                        onCheckedChange={() => toggleCardInGroup(editingGroup.id, card.id)}
                       />
                       <span>{card.label}</span>
                     </label>
                   ))}
-                </TabsContent>
+                </div>
 
-                <TabsContent value="groups" className="space-y-3 pt-3">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="新群組名稱"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addGroup()}
-                    />
-                    <Button size="icon-sm" onClick={addGroup} disabled={!newGroupName.trim()}>
-                      <Plus />
-                    </Button>
-                  </div>
-
-                  {groups.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">尚未建立任何群組</p>
-                  ) : (
-                    groups.map((group) => (
-                      <div key={group.id} className="border rounded-lg">
-                        <div className="flex items-center gap-2 p-3">
-                          <button
-                            className="flex-1 flex items-center gap-1.5 text-left font-medium text-sm"
-                            onClick={() => setExpandedGroupId(expandedGroupId === group.id ? null : group.id)}
-                          >
-                            {expandedGroupId === group.id
-                              ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                              : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            }
-                            {group.name}
-                            <span className="text-muted-foreground font-normal">({group.cardIds.filter(id => selectedIds.includes(id)).length})</span>
-                          </button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => deleteGroup(group.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {expandedGroupId === group.id && (
-                          <div className="border-t px-3 pb-3 pt-2 space-y-2">
-                            {selectedIds.length === 0 ? (
-                              <p className="text-xs text-muted-foreground">先在「工具」頁選擇要顯示的工具</p>
-                            ) : (
-                              ALL_CARDS.filter((c) => selectedIds.includes(c.id)).map((card) => (
-                                <label key={card.id} className="flex items-center gap-3 cursor-pointer text-sm">
-                                  <Checkbox
-                                    checked={group.cardIds.includes(card.id)}
-                                    onCheckedChange={() => toggleCardInGroup(group.id, card.id)}
-                                  />
-                                  <span>{card.label}</span>
-                                </label>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
-              </Tabs>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => deleteGroup(editingGroup.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  刪除群組
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* 群組區塊 */}
         {groups.map((group) => {
@@ -244,7 +276,7 @@ function App() {
 
         {selectedIds.length === 0 && (
           <div className="text-center text-muted-foreground py-16">
-            還沒選擇任何工具，點擊「自訂工具」新增
+            還沒選擇任何工具，點擊右上角 <Settings className="inline h-4 w-4" /> 新增
           </div>
         )}
       </main>
