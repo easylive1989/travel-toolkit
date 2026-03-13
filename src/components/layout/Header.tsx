@@ -1,10 +1,32 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function Header() {
-  const handleInstallClick = () => {
-    // PWA Install logic placeholder
-    console.log("install PWA");
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    window.addEventListener('appinstalled', () => setInstallPrompt(null));
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setInstallPrompt(null);
   };
 
   return (
@@ -14,11 +36,12 @@ export function Header() {
           <span className="text-xl font-bold tracking-tight">🧰 旅遊瑞士刀</span>
         </div>
         <div className="flex items-center">
-          {/* We will conditionally show this later based on PWA status */}
-          <Button variant="outline" size="sm" onClick={handleInstallClick} className="gap-2">
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">安裝到手機</span>
-          </Button>
+          {installPrompt && (
+            <Button variant="outline" size="sm" onClick={handleInstallClick} className="gap-2">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">安裝到手機</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>
