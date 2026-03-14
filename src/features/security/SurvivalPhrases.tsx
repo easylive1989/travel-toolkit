@@ -16,26 +16,6 @@ interface Flashcard {
 
 const STORAGE_KEY = 'travel-toolkit-flashcards';
 
-const DEFAULT_CARDS: Flashcard[] = [
-  // 中文 -> 日文
-  { id: 'jp-1', sourceText: '你好', targetText: 'こんにちは (Konnichiwa)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  { id: 'jp-2', sourceText: '謝謝', targetText: 'ありがとうございます (Arigatou gozaimasu)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  { id: 'jp-3', sourceText: '這個多少錢？', targetText: 'いくらですか？ (Ikura desu ka?)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  { id: 'jp-4', sourceText: '請問廁所在哪裡？', targetText: 'トイレはどこですか？ (Toire wa doko desu ka?)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  
-  // 中文 -> 韓文
-  { id: 'kr-1', sourceText: '你好', targetText: '안녕하세요 (Annyeonghaseyo)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  { id: 'kr-2', sourceText: '謝謝', targetText: '감사합니다 (Gamsahamnida)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  { id: 'kr-3', sourceText: '這個多少錢？', targetText: '얼마예요? (Eolmayeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  { id: 'kr-4', sourceText: '請問廁所在哪裡？', targetText: '화장실이 어디예요? (Hwajangsil-i eodiyeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  
-  // 中文 -> 英文
-  { id: 'en-1', sourceText: '你好', targetText: 'Hello', sourceLang: 'zh-TW', targetLang: 'en-US' },
-  { id: 'en-2', sourceText: '謝謝', targetText: 'Thank you', sourceLang: 'zh-TW', targetLang: 'en-US' },
-  { id: 'en-3', sourceText: '這個多少錢？', targetText: 'How much is this?', sourceLang: 'zh-TW', targetLang: 'en-US' },
-  { id: 'en-4', sourceText: '請問廁所在哪裡？', targetText: 'Where is the restroom?', sourceLang: 'zh-TW', targetLang: 'en-US' },
-];
-
 const SUPPORTED_LANGS = [
   { label: '中文', value: 'zh-TW' },
   { label: '日文', value: 'ja-JP' },
@@ -48,16 +28,89 @@ const SUPPORTED_LANGS = [
   { label: '越南文', value: 'vi-VN' },
 ];
 
+const CORE_TRANSLATIONS: Record<string, Record<string, string>> = {
+  'hello': {
+    'zh-TW': '你好',
+    'ja-JP': 'こんにちは (Konnichiwa)',
+    'ko-KR': '안녕하세요 (Annyeonghaseyo)',
+    'en-US': 'Hello',
+    'fr-FR': 'Bonjour',
+    'de-DE': 'Guten Tag',
+    'it-IT': 'Buongiorno',
+    'th-TH': 'สวัสดี (Sawasdee)',
+    'vi-VN': 'Xin chào',
+  },
+  'thanks': {
+    'zh-TW': '謝謝',
+    'ja-JP': 'ありがとうございます (Arigatou gozaimasu)',
+    'ko-KR': '감사합니다 (Gamsahamnida)',
+    'en-US': 'Thank you',
+    'fr-FR': 'Merci',
+    'de-DE': 'Danke',
+    'it-IT': 'Grazie',
+    'th-TH': 'ขอบคุณ (Khob khun)',
+    'vi-VN': 'Cảm ơn',
+  },
+  'price': {
+    'zh-TW': '這個多少錢？',
+    'ja-JP': 'いくらですか？ (Ikura desu ka?)',
+    'ko-KR': '얼마예요? (Eolmayeyo?)',
+    'en-US': 'How much is this?',
+    'fr-FR': "C'est combien ?",
+    'de-DE': 'Was kostet das?',
+    'it-IT': 'Quanto costa?',
+    'th-TH': 'ราคาเท่าไหร่ (Raka thao rai)',
+    'vi-VN': 'Cái này bao nhiêu tiền?',
+  },
+  'restroom': {
+    'zh-TW': '請問廁所在哪裡？',
+    'ja-JP': 'トイレはどこですか？ (Toire wa doko desu ka?)',
+    'ko-KR': '화장실이 어디예요? (Hwajangsil-i eodiyeyo?)',
+    'en-US': 'Where is the restroom?',
+    'fr-FR': 'Où sont les toilettes ?',
+    'de-DE': 'Wo ist die Toilette?',
+    'it-IT': "Dov'è il bagno?",
+    'th-TH': 'ห้องน้ำอยู่ที่ไหน (Hong nam yu thi nai)',
+    'vi-VN': 'Nhà vệ sinh ở đâu?',
+  }
+};
+
+// 自動生成所有語言配對的預設卡片
+const generateDefaultCards = (): Flashcard[] => {
+  const defaults: Flashcard[] = [];
+  const langValues = SUPPORTED_LANGS.map(l => l.value);
+  const phraseKeys = Object.keys(CORE_TRANSLATIONS);
+
+  langValues.forEach(source => {
+    langValues.forEach(target => {
+      if (source === target) return;
+      
+      phraseKeys.forEach(key => {
+        defaults.push({
+          id: `def-${source}-${target}-${key}`,
+          sourceText: CORE_TRANSLATIONS[key][source],
+          targetText: CORE_TRANSLATIONS[key][target],
+          sourceLang: source,
+          targetLang: target,
+        });
+      });
+    });
+  });
+  return defaults;
+};
+
+const ALL_DEFAULTS = generateDefaultCards();
+
 export function SurvivalPhrases() {
   const [cards, setCards] = useState<Flashcard[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     const existing: Flashcard[] = stored ? JSON.parse(stored) : [];
     
-    // 合併邏輯：確保預設字卡一定會出現在清單中 (避免舊版 localStorage 導致預設項目消失)
+    // 合併邏輯：確保所有語言配對的預設字卡都存在
     const merged = [...existing];
-    DEFAULT_CARDS.forEach(defaultCard => {
-      if (!merged.some(c => c.id === defaultCard.id)) {
-        merged.push(defaultCard);
+    ALL_DEFAULTS.forEach(def => {
+      if (!merged.some(c => c.id === def.id)) {
+        merged.push(def);
       }
     });
     return merged;
