@@ -36,30 +36,22 @@ function App() {
   const { t } = useTranslation()
 
   const ALL_CARDS = [
-    // 💰 財務 (Finance)
     { id: 'exchange-rate', category: t('tools.finance'), label: t('tools.exchange_rate'), component: <ExchangeRate /> },
     { id: 'ledger', category: t('tools.finance'), label: t('tools.ledger'), component: <Ledger /> },
-
-    // ✈️ 行前 (Time/Plan)
     { id: 'packing-list', category: t('tools.plan'), label: t('tools.packing_list'), component: <PackingList /> },
-
-    // 🛡️ 安全 (Security)
     { id: 'survival-phrases', category: t('tools.security'), label: t('tools.flashcards'), component: <SurvivalPhrases /> },
-
-    // 💡 生活 (Life)
     { id: 'unit-converter', category: t('tools.life'), label: t('tools.unit_converter'), component: <UnitConverter /> },
     { id: 'plug-guide', category: t('tools.life'), label: t('tools.plug_guide'), component: <PlugGuide /> },
     { id: 'size-guide', category: t('tools.life'), label: t('tools.size_guide'), component: <SizeGuide /> },
   ]
 
-  // 將卡片依類別分組
   const CARDS_BY_CATEGORY = ALL_CARDS.reduce((acc, card) => {
     if (!acc[card.category]) acc[card.category] = []
     acc[card.category].push(card)
     return acc
   }, {} as Record<string, typeof ALL_CARDS>)
 
-  const loadGroups = (): Group[] => {
+  const [groups, setGroups] = useState<Group[]>(() => {
     try {
       const stored = localStorage.getItem(GROUPS_KEY)
       if (stored) {
@@ -67,25 +59,20 @@ function App() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
       }
     } catch {}
-    // 預設給精選的四個工具
     return [{ 
       id: 'default', 
       name: t('groups.default'), 
       cardIds: ['exchange-rate', 'packing-list', 'ledger', 'unit-converter'] 
     }]
-  }
+  })
 
-  const [groups, setGroups] = useState<Group[]>(loadGroups)
   const [activeGroupId, setActiveGroupId] = useState<string>(groups[0]?.id || 'default')
-
   const [showNewGroupInput, setShowNewGroupInput] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const newGroupInputRef = useRef<HTMLInputElement>(null)
-
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingName, setEditingName] = useState('')
 
-  // 確保 activeGroup 始終存在
   const activeGroup = groups.find((g) => g.id === activeGroupId) || groups[0]
 
   const saveGroups = (next: Group[]) => {
@@ -103,7 +90,7 @@ function App() {
   }
 
   const deleteGroup = () => {
-    if (groups.length <= 1) return // 不能刪除最後一個群組
+    if (groups.length <= 1) return
     const nextGroups = groups.filter((g) => g.id !== activeGroup.id)
     saveGroups(nextGroups)
     setActiveGroupId(nextGroups[0].id)
@@ -131,22 +118,13 @@ function App() {
     saveGroups(updated)
   }
 
-  const openEditDialog = () => {
-    setEditingName(activeGroup.name)
-    setIsEditDialogOpen(true)
-  }
-
   const activeCards = ALL_CARDS.filter((c) => activeGroup.cardIds.includes(c.id))
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
-
       <main className="flex-1 w-full max-w-md mx-auto p-4 space-y-4">
-
-        {/* 工具列：群組 Tabs + ⚙️ + ✏️ */}
         <div className="flex items-center justify-between gap-2 border-b pb-2">
-          {/* 群組列表 */}
           <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
             {groups.map((group) => (
               <button
@@ -162,8 +140,6 @@ function App() {
                 {group.name}
               </button>
             ))}
-
-            {/* 新增群組 */}
             {showNewGroupInput ? (
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Input
@@ -189,8 +165,6 @@ function App() {
               </button>
             )}
           </div>
-
-          {/* 右側操作按鈕 */}
           <div className="flex items-center gap-1 flex-shrink-0 pl-2">
             <Dialog>
               <DialogTrigger render={
@@ -200,16 +174,13 @@ function App() {
               } />
               <DialogContent className="max-h-[80vh] flex flex-col">
                 <DialogHeader>
-                  <DialogTitle>{t('groups.settings')}「{activeGroup.name}」</DialogTitle>
+                  <DialogTitle>{t('groups.settings')} - {activeGroup.name}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
-                  <p className="text-xs text-muted-foreground">{t('groups.settings_desc') || 'Select tools to display in this group'}</p>
-                  
+                  <p className="text-xs text-muted-foreground">{t('groups.settings_desc')}</p>
                   {Object.entries(CARDS_BY_CATEGORY).map(([category, cards]) => (
                     <div key={category} className="space-y-2">
-                      <h4 className="text-xs font-semibold text-muted-foreground border-b pb-1">
-                        {category}
-                      </h4>
+                      <h4 className="text-xs font-semibold text-muted-foreground border-b pb-1">{category}</h4>
                       <div className="grid grid-cols-2 gap-2">
                         {cards.map((card) => (
                           <label key={card.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors">
@@ -226,13 +197,11 @@ function App() {
                 </div>
               </DialogContent>
             </Dialog>
-
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogTrigger render={
                 <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={openEditDialog}
+                  variant="ghost" size="icon" 
+                  onClick={() => { setEditingName(activeGroup.name); setIsEditDialogOpen(true); }}
                   className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                 >
                   <Pencil className="h-4 w-4" />
@@ -240,11 +209,11 @@ function App() {
               } />
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{t('groups.edit')}「{activeGroup.name}」</DialogTitle>
+                  <DialogTitle>{t('groups.edit')} - {activeGroup.name}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6 pt-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">{t('groups.rename') || 'Rename'}</label>
+                    <label className="text-xs font-medium text-muted-foreground">{t('groups.rename')}</label>
                     <div className="flex gap-2">
                       <Input
                         value={editingName}
@@ -257,17 +226,10 @@ function App() {
                       </Button>
                     </div>
                   </div>
-
                   <div className="pt-2 border-t">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={deleteGroup}
-                      disabled={groups.length <= 1}
-                    >
+                    <Button variant="destructive" size="sm" className="w-full gap-2" onClick={deleteGroup} disabled={groups.length <= 1}>
                       <Trash2 className="h-4 w-4" />
-                      {groups.length <= 1 ? (t('groups.at_least_one') || 'Keep at least one group') : t('common.delete')}
+                      {groups.length <= 1 ? t('groups.at_least_one') : t('common.delete')}
                     </Button>
                   </div>
                 </div>
@@ -275,8 +237,6 @@ function App() {
             </Dialog>
           </div>
         </div>
-
-        {/* 顯示當前選中群組的卡片 */}
         <div className="space-y-4 pt-2 pb-8">
           {activeCards.length > 0 ? (
             activeCards.map((card) => <div key={card.id}>{card.component}</div>)
@@ -291,7 +251,6 @@ function App() {
           )}
         </div>
       </main>
-
       <Footer />
     </div>
   )
