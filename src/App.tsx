@@ -30,6 +30,14 @@ const ALL_CARDS = [
 
   // ✈️ 行前 (Time/Plan)
   { id: 'packing-list', category: '✈️ 行前', label: '🧳 行李清單', component: <PackingList /> },
+
+  // 🛡️ 安全 (Security)
+  { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 旅遊字卡', component: <SurvivalPhrases /> },
+
+  // 💡 生活 (Life)
+  { id: 'unit-converter', category: '💡 生活', label: '🌡️ 單位換算', component: <UnitConverter /> },
+  { id: 'plug-guide', category: '💡 生活', label: '🔌 插頭指南', component: <PlugGuide /> },
+  { id: 'size-guide', category: '💡 生活', label: '👟 尺寸對照', component: <SizeGuide /> },
 ]
 
 // 將卡片依類別分組
