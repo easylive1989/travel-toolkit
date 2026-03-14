@@ -10,25 +10,27 @@ interface Flashcard {
   id: string;
   sourceText: string;
   targetText: string;
+  sourceLang: string;
   targetLang: string;
 }
 
 const STORAGE_KEY = 'travel-toolkit-flashcards';
 
 const DEFAULT_CARDS: Flashcard[] = [
-  // 日語
-  { id: '1', sourceText: '你好', targetText: 'こんにちは (Konnichiwa)', targetLang: 'ja-JP' },
-  { id: '2', sourceText: '請問廁所在哪裡？', targetText: 'トイレはどこですか？', targetLang: 'ja-JP' },
-  { id: '3', sourceText: '謝謝', targetText: 'ありがとうございます', targetLang: 'ja-JP' },
-  // 韓語
-  { id: '4', sourceText: '你好', targetText: '안녕하세요 (Annyeonghaseyo)', targetLang: 'ko-KR' },
-  { id: '5', sourceText: '多少錢？', targetText: '얼마예요? (Eolmayeyo?)', targetLang: 'ko-KR' },
-  // 英語
-  { id: '6', sourceText: '你好', targetText: 'Hello', targetLang: 'en-US' },
-  { id: '7', sourceText: '請給我這個', targetText: 'I would like this, please.', targetLang: 'en-US' },
+  // 中文 -> 日語
+  { id: '1', sourceText: '你好', targetText: 'こんにちは (Konnichiwa)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  { id: '2', sourceText: '請問廁所在哪裡？', targetText: 'トイレはどこですか？', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  { id: '3', sourceText: '謝謝', targetText: 'ありがとうございます', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  // 中文 -> 韓語
+  { id: '4', sourceText: '你好', targetText: '안녕하세요 (Annyeonghaseyo)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  { id: '5', sourceText: '多少錢？', targetText: '얼마예요? (Eolmayeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  // 中文 -> 英語
+  { id: '6', sourceText: '你好', targetText: 'Hello', sourceLang: 'zh-TW', targetLang: 'en-US' },
+  { id: '7', sourceText: '請給我這個', targetText: 'I would like this, please.', sourceLang: 'zh-TW', targetLang: 'en-US' },
 ];
 
 const SUPPORTED_LANGS = [
+  { label: '中文', value: 'zh-TW' },
   { label: '日語', value: 'ja-JP' },
   { label: '韓語', value: 'ko-KR' },
   { label: '英語', value: 'en-US' },
@@ -45,9 +47,11 @@ export function SurvivalPhrases() {
     return stored ? JSON.parse(stored) : DEFAULT_CARDS;
   });
 
+  const [activeSourceLang, setActiveSourceLang] = useState('zh-TW');
+  const [activeTargetLang, setActiveTargetLang] = useState('ja-JP');
+
   const [newSource, setNewSource] = useState('');
   const [newTarget, setNewTarget] = useState('');
-  const [newLang, setNewLang] = useState('ja-JP');
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   useEffect(() => {
@@ -60,7 +64,8 @@ export function SurvivalPhrases() {
       id: crypto.randomUUID(),
       sourceText: newSource,
       targetText: newTarget,
-      targetLang: newLang,
+      sourceLang: activeSourceLang,
+      targetLang: activeTargetLang,
     };
     setCards([newCard, ...cards]);
     setNewSource('');
@@ -78,6 +83,11 @@ export function SurvivalPhrases() {
     utterance.lang = language;
     window.speechSynthesis.speak(utterance);
   };
+
+  // 根據當前選中的語言配對過濾字卡
+  const filteredCards = cards.filter(
+    c => c.sourceLang === activeSourceLang && c.targetLang === activeTargetLang
+  );
 
   return (
     <Card className="w-full">
@@ -98,8 +108,11 @@ export function SurvivalPhrases() {
                 <DialogTitle>新增字卡</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                <div className="text-xs bg-muted p-2 rounded text-muted-foreground">
+                  新增至：{SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label} ➜ {SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label}
+                </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">來源語言內容 (例如：中文)</label>
+                  <label className="text-xs font-medium">來源內容 ({SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label})</label>
                   <Input 
                     value={newSource} 
                     onChange={e => setNewSource(e.target.value)} 
@@ -107,23 +120,12 @@ export function SurvivalPhrases() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">目標語言內容</label>
+                  <label className="text-xs font-medium">目標內容 ({SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label})</label>
                   <Input 
                     value={newTarget} 
                     onChange={e => setNewTarget(e.target.value)} 
                     placeholder="例如：ありがとうございます" 
                   />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium">發音語言</label>
-                  <Select value={newLang} onValueChange={setNewLang}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_LANGS.map(l => (
-                        <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
                 <Button className="w-full" onClick={addCard} disabled={!newSource.trim() || !newTarget.trim()}>
                   加入清單
@@ -132,16 +134,38 @@ export function SurvivalPhrases() {
             </DialogContent>
           </Dialog>
         </div>
-        <CardDescription>自定義個人旅遊常用短語與發音</CardDescription>
+        
+        {/* 語言切換器 */}
+        <div className="flex items-center gap-2 pt-2">
+          <Select value={activeSourceLang} onValueChange={setActiveSourceLang}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LANGS.map(l => (
+                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="text-muted-foreground">➜</div>
+          <Select value={activeTargetLang} onValueChange={setActiveTargetLang}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LANGS.map(l => (
+                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
+
       <CardContent className="px-3 pb-4">
         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-          {cards.map((card) => (
+          {filteredCards.map((card) => (
             <div key={card.id} className="group relative flex justify-between items-center p-3 bg-muted/30 border rounded-xl hover:bg-muted/50 transition-colors">
               <div className="flex-1 min-w-0 pr-4">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
-                  {SUPPORTED_LANGS.find(l => l.value === card.targetLang)?.label}
-                </div>
                 <div className="text-sm font-medium mb-0.5">{card.sourceText}</div>
                 <div className="font-bold text-primary truncate">{card.targetText}</div>
               </div>
@@ -165,10 +189,10 @@ export function SurvivalPhrases() {
               </div>
             </div>
           ))}
-          {cards.length === 0 && (
+          {filteredCards.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">尚未新增任何字卡</p>
-              <p className="text-xs mt-1">點擊右上角 + 開始建立個人單字庫</p>
+              <p className="text-sm">尚無該語言配對的字卡</p>
+              <p className="text-xs mt-1">點擊右上角 + 為此語言組合新增字卡</p>
             </div>
           )}
         </div>
