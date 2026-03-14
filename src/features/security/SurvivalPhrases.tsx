@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Volume2, Plus, Trash2, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useTranslation } from 'react-i18next';
 
 interface Flashcard {
   id: string;
@@ -27,6 +28,8 @@ const SUPPORTED_LANGS = [
   { label: '泰文', value: 'th-TH' },
   { label: '越南文', value: 'vi-VN' },
 ];
+
+const CORE_PHRASE_KEYS = ['hello', 'thanks', 'price', 'restroom'];
 
 const CORE_TRANSLATIONS: Record<string, Record<string, string>> = {
   'hello': {
@@ -75,50 +78,43 @@ const CORE_TRANSLATIONS: Record<string, Record<string, string>> = {
   }
 };
 
-// 自動生成所有語言配對的預設卡片
-const generateDefaultCards = (): Flashcard[] => {
-  const defaults: Flashcard[] = [];
-  const langValues = SUPPORTED_LANGS.map(l => l.value);
-  const phraseKeys = Object.keys(CORE_TRANSLATIONS);
+export function SurvivalPhrases() {
+  const { t } = useTranslation();
 
-  langValues.forEach(source => {
-    langValues.forEach(target => {
-      if (source === target) return;
-      
-      phraseKeys.forEach(key => {
-        defaults.push({
-          id: `def-${source}-${target}-${key}`,
-          sourceText: CORE_TRANSLATIONS[key][source],
-          targetText: CORE_TRANSLATIONS[key][target],
-          sourceLang: source,
-          targetLang: target,
+  const generateDefaultCards = (): Flashcard[] => {
+    const defaults: Flashcard[] = [];
+    const langValues = SUPPORTED_LANGS.map(l => l.value);
+
+    langValues.forEach(source => {
+      langValues.forEach(target => {
+        if (source === target) return;
+        CORE_PHRASE_KEYS.forEach(key => {
+          defaults.push({
+            id: `def-${source}-${target}-${key}`,
+            sourceText: CORE_TRANSLATIONS[key][source],
+            targetText: CORE_TRANSLATIONS[key][target],
+            sourceLang: source,
+            targetLang: target,
+          });
         });
       });
     });
-  });
-  return defaults;
-};
+    return defaults;
+  };
 
-const ALL_DEFAULTS = generateDefaultCards();
-
-export function SurvivalPhrases() {
   const [cards, setCards] = useState<Flashcard[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     const existing: Flashcard[] = stored ? JSON.parse(stored) : [];
-    
-    // 合併邏輯：確保所有語言配對的預設字卡都存在
+    const allDefaults = generateDefaultCards();
     const merged = [...existing];
-    ALL_DEFAULTS.forEach(def => {
-      if (!merged.some(c => c.id === def.id)) {
-        merged.push(def);
-      }
+    allDefaults.forEach(def => {
+      if (!merged.some(c => c.id === def.id)) merged.push(def);
     });
     return merged;
   });
 
   const [activeSourceLang, setActiveSourceLang] = useState('zh-TW');
   const [activeTargetLang, setActiveTargetLang] = useState('ja-JP');
-
   const [newSource, setNewSource] = useState('');
   const [newTarget, setNewTarget] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -153,7 +149,10 @@ export function SurvivalPhrases() {
     window.speechSynthesis.speak(utterance);
   };
 
-  // 根據當前選中的語言配對過濾字卡
+  const getLangLabel = (val: string) => {
+    return SUPPORTED_LANGS.find(l => l.value === val)?.label || val;
+  };
+
   const filteredCards = cards.filter(
     c => c.sourceLang === activeSourceLang && c.targetLang === activeTargetLang
   );
@@ -164,7 +163,7 @@ export function SurvivalPhrases() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Languages className="h-5 w-5 text-primary" />
-            <CardTitle>旅遊字卡</CardTitle>
+            <CardTitle>{t('flashcards.title')}</CardTitle>
           </div>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger render={
@@ -174,56 +173,47 @@ export function SurvivalPhrases() {
             } />
             <DialogContent className="max-w-[90vw] sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>新增字卡</DialogTitle>
+                <DialogTitle>{t('flashcards.add_card')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
-                <div className="text-xs bg-muted p-2 rounded text-muted-foreground">
-                  新增至：{SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label} ➜ {SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label}
+                <div className="text-xs bg-muted p-2 rounded text-muted-foreground font-medium">
+                  {t('groups.add')} ➜ {getLangLabel(activeSourceLang)} ➜ {getLangLabel(activeTargetLang)}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">來源內容 ({SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label})</label>
-                  <Input 
-                    value={newSource} 
-                    onChange={e => setNewSource(e.target.value)} 
-                    placeholder="例如：謝謝" 
-                  />
+                  <label className="text-xs font-medium">{t('flashcards.source_label')} ({getLangLabel(activeSourceLang)})</label>
+                  <Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder="..." />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">目標內容 ({SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label})</label>
-                  <Input 
-                    value={newTarget} 
-                    onChange={e => setNewTarget(e.target.value)} 
-                    placeholder="例如：ありがとうございます" 
-                  />
+                  <label className="text-xs font-medium">{t('flashcards.target_label')} ({getLangLabel(activeTargetLang)})</label>
+                  <Input value={newTarget} onChange={e => setNewTarget(e.target.value)} placeholder="..." />
                 </div>
-                <Button className="w-full" onClick={addCard} disabled={!newSource.trim() || !newTarget.trim()}>
-                  加入清單
+                <Button className="w-full font-bold" onClick={addCard} disabled={!newSource.trim() || !newTarget.trim()}>
+                  {t('flashcards.add_to_list')}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
         
-        {/* 語言切換器 */}
         <div className="flex items-center gap-2 pt-2">
           <Select value={activeSourceLang} onValueChange={setActiveSourceLang}>
             <SelectTrigger className="h-8 text-xs min-w-[80px]">
-              {SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label}
+              {getLangLabel(activeSourceLang)}
             </SelectTrigger>
             <SelectContent>
               {SUPPORTED_LANGS.map(l => (
-                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                <SelectItem key={l.value} value={l.value}>{getLangLabel(l.value)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="text-muted-foreground">➜</div>
           <Select value={activeTargetLang} onValueChange={setActiveTargetLang}>
             <SelectTrigger className="h-8 text-xs min-w-[80px]">
-              {SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label}
+              {getLangLabel(activeTargetLang)}
             </SelectTrigger>
             <SelectContent>
               {SUPPORTED_LANGS.map(l => (
-                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                <SelectItem key={l.value} value={l.value}>{getLangLabel(l.value)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -231,7 +221,7 @@ export function SurvivalPhrases() {
       </CardHeader>
 
       <CardContent className="px-3 pb-4">
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 no-scrollbar">
           {filteredCards.map((card) => (
             <div key={card.id} className="group relative flex justify-between items-center p-3 bg-muted/30 border rounded-xl hover:bg-muted/50 transition-colors">
               <div className="flex-1 min-w-0 pr-4">
@@ -239,29 +229,21 @@ export function SurvivalPhrases() {
                 <div className="font-bold text-primary truncate">{card.targetText}</div>
               </div>
               <div className="flex gap-1 shrink-0">
-                <Button 
-                  variant="ghost" 
-                  size="icon-xs" 
-                  className="rounded-full text-muted-foreground hover:text-foreground"
-                  onClick={() => speak(card.targetText, card.targetLang)}
-                >
+                <Button variant="ghost" size="icon-xs" className="rounded-full text-muted-foreground hover:text-foreground" onClick={() => speak(card.targetText, card.targetLang)}>
                   <Volume2 className="h-4 w-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon-xs" 
-                  className="rounded-full text-muted-foreground hover:text-destructive transition-colors"
-                  onClick={() => deleteCard(card.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {!card.id.startsWith('def-') && (
+                  <Button variant="ghost" size="icon-xs" className="rounded-full text-muted-foreground hover:text-destructive transition-colors" onClick={() => deleteCard(card.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           ))}
           {filteredCards.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">尚無該語言配對的字卡</p>
-              <p className="text-xs mt-1">點擊右上角 + 為此語言組合新增字卡</p>
+              <p className="text-sm">{t('flashcards.empty')}</p>
+              <p className="text-xs mt-1">{t('flashcards.click_plus')}</p>
             </div>
           )}
         </div>

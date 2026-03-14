@@ -3,17 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const UNIT_TYPES = [
-  { id: 'temp', label: '溫度 (°C ↔ °F)', units: ['°C', '°F'] },
-  { id: 'dist', label: '距離 (km ↔ mi)', units: ['km', 'mi'] },
-  { id: 'weight', label: '重量 (kg ↔ lb)', units: ['kg', 'lb'] },
-];
+import { useTranslation } from 'react-i18next';
 
 export function UnitConverter() {
+  const { t } = useTranslation();
   const [type, setType] = useState('temp');
   const [val1, setVal1] = useState('');
   const [val2, setVal2] = useState('');
+
+  const UNIT_TYPES = [
+    { id: 'temp', label: t('units.temp'), units: ['°C', '°F'] },
+    { id: 'dist', label: t('units.dist'), units: ['km', 'mi'] },
+    { id: 'weight', label: t('units.weight'), units: ['kg', 'lb'] },
+  ];
 
   const activeType = UNIT_TYPES.find(t => t.id === type) || UNIT_TYPES[0];
   const [l1, l2] = activeType.units;
@@ -28,7 +30,6 @@ export function UnitConverter() {
     const v = e.target.value;
     setVal1(v);
     if (!v) { setVal2(''); return; }
-    
     const num = parseFloat(v);
     let res = 0;
     if (type === 'temp') res = (num * 9/5) + 32;
@@ -41,7 +42,6 @@ export function UnitConverter() {
     const v = e.target.value;
     setVal2(v);
     if (!v) { setVal1(''); return; }
-
     const num = parseFloat(v);
     let res = 0;
     if (type === 'temp') res = (num - 32) * 5/9;
@@ -55,17 +55,15 @@ export function UnitConverter() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <span className="text-2xl">⚖️</span>
-          <CardTitle>全方位單位換算</CardTitle>
+          <CardTitle>{t('units.title')}</CardTitle>
         </div>
-        <CardDescription>溫度、長度、重量一鍵轉換</CardDescription>
+        <CardDescription>{t('units.desc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>轉換類型</Label>
+          <Label>{t('units.type')}</Label>
           <Select value={type} onValueChange={(val) => val && handleTypeChange(val)}>
-            <SelectTrigger>
-              {activeType.label}
-            </SelectTrigger>
+            <SelectTrigger>{activeType.label}</SelectTrigger>
             <SelectContent>
               {UNIT_TYPES.map((t) => (
                 <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
@@ -73,7 +71,6 @@ export function UnitConverter() {
             </SelectContent>
           </Select>
         </div>
-        
         <div className="flex items-center gap-4 mt-6">
           <div className="flex-1 relative">
             <Input type="number" value={val1} onChange={handleV1Change} className="pr-10" />

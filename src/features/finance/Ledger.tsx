@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Download } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 interface Record {
   id: number;
@@ -16,6 +17,7 @@ interface Record {
 const CURRENCIES = ['TWD', 'JPY', 'KRW', 'USD', 'EUR', 'THB', 'VND'];
 
 export function Ledger() {
+  const { t } = useTranslation();
   const [records, setRecords] = useState<Record[]>(() => {
     const saved = localStorage.getItem('trip_ledger');
     if (saved) {
@@ -48,7 +50,7 @@ export function Ledger() {
 
     const newRecord: Record = {
       id: Date.now(),
-      note: note.trim() || '日常支出',
+      note: note.trim() || t('ledger.note_placeholder'),
       amount: amt,
       currency,
     };
@@ -65,13 +67,13 @@ export function Ledger() {
   const exportToCSV = () => {
     if (records.length === 0) return;
     
-    const headers = ['日期', '時間', '用途', '金額', '貨幣'];
+    const headers = [t('ledger.date') || 'Date', t('ledger.time') || 'Time', t('ledger.note'), t('ledger.amount'), t('ledger.currency')];
     const rows = records.map(r => {
       const date = new Date(r.id);
       return [
         date.toLocaleDateString(),
         date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        `"${r.note}"`,
+        `"${r.note}"`, // Note: This is intentional for CSV quoting
         r.amount,
         r.currency
       ].join(',');
@@ -82,7 +84,7 @@ export function Ledger() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `旅遊記帳本_${new Date().toLocaleDateString()}.csv`);
+    link.setAttribute("download", `${t('ledger.title')}_${new Date().toLocaleDateString()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -90,7 +92,7 @@ export function Ledger() {
   };
 
   const resetRecords = () => {
-    if (window.confirm('確定要清空所有記帳紀錄嗎？此動作無法復原。')) {
+    if (window.confirm(t('ledger.reset_confirm'))) {
       saveRecords([]);
     }
   };
@@ -103,7 +105,7 @@ export function Ledger() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">💸</span>
-            <CardTitle>旅遊簡易記帳本</CardTitle>
+            <CardTitle>{t('ledger.title')}</CardTitle>
           </div>
           <div className="flex gap-1">
             <Button 
@@ -114,7 +116,7 @@ export function Ledger() {
               className="h-8 text-xs gap-1"
             >
               <Download className="h-3 w-3" />
-              匯出
+              {t('common.export')}
             </Button>
             <Button 
               variant="ghost" 
@@ -124,16 +126,16 @@ export function Ledger() {
               className="h-8 text-xs gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
             >
               <Trash2 className="h-3 w-3" />
-              重置
+              {t('common.reset')}
             </Button>
           </div>
         </div>
-        <CardDescription>記錄每一筆消費，輕鬆管理預算</CardDescription>
+        <CardDescription>{t('ledger.desc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         
         <div className="bg-primary/5 rounded-2xl p-6 text-center border border-primary/10">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">累計總額 (不分幣別)</div>
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">{t('ledger.total')}</div>
           <div className="text-4xl font-black text-primary tracking-tighter">
             {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
           </div>
@@ -141,9 +143,9 @@ export function Ledger() {
 
         <div className="space-y-3 pt-2">
           <div className="space-y-1.5">
-            <Label className="text-xs ml-1">用途說明</Label>
+            <Label className="text-xs ml-1">{t('ledger.note')}</Label>
             <Input 
-              placeholder="例如：拉麵、交通費" 
+              placeholder={t('ledger.note_placeholder')} 
               value={note} 
               onChange={e => setNote(e.target.value)}
               className="bg-muted/30"
@@ -151,7 +153,7 @@ export function Ledger() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs ml-1">金額</Label>
+              <Label className="text-xs ml-1">{t('ledger.amount')}</Label>
               <Input 
                 type="number" 
                 placeholder="0.00" 
@@ -161,7 +163,7 @@ export function Ledger() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs ml-1">貨幣</Label>
+              <Label className="text-xs ml-1">{t('ledger.currency')}</Label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="bg-muted/30 h-10">
                   <SelectValue />
@@ -174,18 +176,18 @@ export function Ledger() {
           </div>
           <Button onClick={addRecord} disabled={!amount} className="w-full font-bold shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
-            新增一筆紀錄
+            {t('ledger.add_record')}
           </Button>
         </div>
 
         <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase">消費清單</span>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">共 {records.length} 筆</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase">{t('ledger.list_title')}</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{t('ledger.count', { count: records.length })}</span>
           </div>
           {records.length === 0 ? (
              <div className="text-center py-10 border-2 border-dashed rounded-xl">
-               <p className="text-sm text-muted-foreground">目前還沒有任何紀錄</p>
+               <p className="text-sm text-muted-foreground">{t('ledger.empty')}</p>
              </div>
           ) : (
             records.map((r) => (
