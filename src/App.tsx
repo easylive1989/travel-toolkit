@@ -42,7 +42,7 @@ const ALL_CARDS = [
 
   // 🛡️ 安全 (Security)
   { id: 'emergency-numbers', category: '🛡️ 安全', label: '🆘 緊急電話', component: <EmergencyNumbers /> },
-  { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 求生短語', component: <SurvivalPhrases /> },
+  { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 旅遊字卡', component: <SurvivalPhrases /> },
 
   // 💡 生活 (Life)
   { id: 'unit-converter', category: '💡 生活', label: '🌡️ 單位換算', component: <UnitConverter /> },
