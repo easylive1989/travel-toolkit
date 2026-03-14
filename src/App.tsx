@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Settings, Trash2, Plus, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 // Finance
 import { ExchangeRate } from '@/features/finance/ExchangeRate'
@@ -23,30 +24,6 @@ import { UnitConverter } from '@/features/life/UnitConverter'
 import { PlugGuide } from '@/features/life/PlugGuide'
 import { SizeGuide } from '@/features/life/SizeGuide'
 
-const ALL_CARDS = [
-  // 💰 財務 (Finance)
-  { id: 'exchange-rate', category: '💰 財務', label: '💱 匯率換算', component: <ExchangeRate /> },
-  { id: 'ledger', category: '💰 財務', label: '📒 旅遊帳本', component: <Ledger /> },
-
-  // ✈️ 行前 (Time/Plan)
-  { id: 'packing-list', category: '✈️ 行前', label: '🧳 行李清單', component: <PackingList /> },
-
-  // 🛡️ 安全 (Security)
-  { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 旅遊字卡', component: <SurvivalPhrases /> },
-
-  // 💡 生活 (Life)
-  { id: 'unit-converter', category: '💡 生活', label: '🌡️ 單位換算', component: <UnitConverter /> },
-  { id: 'plug-guide', category: '💡 生活', label: '🔌 插頭指南', component: <PlugGuide /> },
-  { id: 'size-guide', category: '💡 生活', label: '👟 尺寸對照', component: <SizeGuide /> },
-]
-
-// 將卡片依類別分組
-const CARDS_BY_CATEGORY = ALL_CARDS.reduce((acc, card) => {
-  if (!acc[card.category]) acc[card.category] = []
-  acc[card.category].push(card)
-  return acc
-}, {} as Record<string, typeof ALL_CARDS>)
-
 interface Group {
   id: string
   name: string
@@ -55,23 +32,49 @@ interface Group {
 
 const GROUPS_KEY = 'card-groups'
 
-function loadGroups(): Group[] {
-  try {
-    const stored = localStorage.getItem(GROUPS_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
-    }
-  } catch {}
-  // 預設給精選的四個工具
-  return [{ 
-    id: 'default', 
-    name: '預設', 
-    cardIds: ['exchange-rate', 'packing-list', 'ledger', 'unit-converter'] 
-  }]
-}
-
 function App() {
+  const { t } = useTranslation()
+
+  const ALL_CARDS = [
+    // 💰 財務 (Finance)
+    { id: 'exchange-rate', category: t('tools.finance'), label: t('tools.exchange_rate'), component: <ExchangeRate /> },
+    { id: 'ledger', category: t('tools.finance'), label: t('tools.ledger'), component: <Ledger /> },
+
+    // ✈️ 行前 (Time/Plan)
+    { id: 'packing-list', category: t('tools.plan'), label: t('tools.packing_list'), component: <PackingList /> },
+
+    // 🛡️ 安全 (Security)
+    { id: 'survival-phrases', category: t('tools.security'), label: t('tools.flashcards'), component: <SurvivalPhrases /> },
+
+    // 💡 生活 (Life)
+    { id: 'unit-converter', category: t('tools.life'), label: t('tools.unit_converter'), component: <UnitConverter /> },
+    { id: 'plug-guide', category: t('tools.life'), label: t('tools.plug_guide'), component: <PlugGuide /> },
+    { id: 'size-guide', category: t('tools.life'), label: t('tools.size_guide'), component: <SizeGuide /> },
+  ]
+
+  // 將卡片依類別分組
+  const CARDS_BY_CATEGORY = ALL_CARDS.reduce((acc, card) => {
+    if (!acc[card.category]) acc[card.category] = []
+    acc[card.category].push(card)
+    return acc
+  }, {} as Record<string, typeof ALL_CARDS>)
+
+  const loadGroups = (): Group[] => {
+    try {
+      const stored = localStorage.getItem(GROUPS_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    // 預設給精選的四個工具
+    return [{ 
+      id: 'default', 
+      name: t('groups.default'), 
+      cardIds: ['exchange-rate', 'packing-list', 'ledger', 'unit-converter'] 
+    }]
+  }
+
   const [groups, setGroups] = useState<Group[]>(loadGroups)
   const [activeGroupId, setActiveGroupId] = useState<string>(groups[0]?.id || 'default')
 
@@ -166,7 +169,7 @@ function App() {
                 <Input
                   ref={newGroupInputRef}
                   className="h-8 w-24 text-sm px-2"
-                  placeholder="新群組"
+                  placeholder={t('groups.new_placeholder')}
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   onKeyDown={(e) => {
@@ -182,7 +185,7 @@ function App() {
                 className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/50 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                新增
+                {t('groups.add')}
               </button>
             )}
           </div>
@@ -195,33 +198,33 @@ function App() {
                   <Settings className="h-5 w-5" />
                 </Button>
               } />
-                            <DialogContent className="max-h-[80vh] flex flex-col">
-                              <DialogHeader>
-                                <DialogTitle>設定「{activeGroup.name}」的工具</DialogTitle>
-                              </DialogHeader>
-                              <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
-                                <p className="text-xs text-muted-foreground">勾選要在這個群組顯示的工具</p>
-                                
-                                {Object.entries(CARDS_BY_CATEGORY).map(([category, cards]) => (
-                                  <div key={category} className="space-y-2">
-                                    <h4 className="text-xs font-semibold text-muted-foreground border-b pb-1">
-                                      {category}
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {cards.map((card) => (
-                                        <label key={card.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors">
-                                          <Checkbox
-                                            checked={activeGroup.cardIds.includes(card.id)}
-                                            onCheckedChange={() => toggleCardInGroup(card.id)}
-                                          />
-                                          <span className="text-sm truncate">{card.label}</span>
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </DialogContent>
+              <DialogContent className="max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>{t('groups.settings')}「{activeGroup.name}」</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
+                  <p className="text-xs text-muted-foreground">{t('groups.settings_desc') || 'Select tools to display in this group'}</p>
+                  
+                  {Object.entries(CARDS_BY_CATEGORY).map(([category, cards]) => (
+                    <div key={category} className="space-y-2">
+                      <h4 className="text-xs font-semibold text-muted-foreground border-b pb-1">
+                        {category}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {cards.map((card) => (
+                          <label key={card.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors">
+                            <Checkbox
+                              checked={activeGroup.cardIds.includes(card.id)}
+                              onCheckedChange={() => toggleCardInGroup(card.id)}
+                            />
+                            <span className="text-sm truncate">{card.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
             </Dialog>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -237,20 +240,20 @@ function App() {
               } />
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>編輯群組「{activeGroup.name}」</DialogTitle>
+                  <DialogTitle>{t('groups.edit')}「{activeGroup.name}」</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6 pt-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">重新命名</label>
+                    <label className="text-xs font-medium text-muted-foreground">{t('groups.rename') || 'Rename'}</label>
                     <div className="flex gap-2">
                       <Input
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && renameGroup()}
-                        placeholder="群組名稱"
+                        placeholder={t('groups.new_placeholder')}
                       />
                       <Button size="sm" onClick={renameGroup} disabled={!editingName.trim() || editingName === activeGroup.name}>
-                        儲存
+                        {t('common.save')}
                       </Button>
                     </div>
                   </div>
@@ -264,7 +267,7 @@ function App() {
                       disabled={groups.length <= 1}
                     >
                       <Trash2 className="h-4 w-4" />
-                      {groups.length <= 1 ? '至少需保留一個群組' : '刪除此群組'}
+                      {groups.length <= 1 ? (t('groups.at_least_one') || 'Keep at least one group') : t('common.delete')}
                     </Button>
                   </div>
                 </div>
@@ -282,8 +285,8 @@ function App() {
               <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-6 w-6" />
               </div>
-              <p className="text-sm">這個群組還沒有工具</p>
-              <p className="text-xs mt-1">請點擊右上角 <Settings className="inline h-3 w-3" /> 來新增工具</p>
+              <p className="text-sm">{t('groups.no_tools')}</p>
+              <p className="text-xs mt-1">{t('groups.click_settings')}</p>
             </div>
           )}
         </div>
@@ -295,4 +298,3 @@ function App() {
 }
 
 export default App
-
