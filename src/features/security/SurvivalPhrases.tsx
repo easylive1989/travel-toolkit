@@ -51,7 +51,16 @@ const SUPPORTED_LANGS = [
 export function SurvivalPhrases() {
   const [cards, setCards] = useState<Flashcard[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : DEFAULT_CARDS;
+    const existing: Flashcard[] = stored ? JSON.parse(stored) : [];
+    
+    // 合併邏輯：確保預設字卡一定會出現在清單中 (避免舊版 localStorage 導致預設項目消失)
+    const merged = [...existing];
+    DEFAULT_CARDS.forEach(defaultCard => {
+      if (!merged.some(c => c.id === defaultCard.id)) {
+        merged.push(defaultCard);
+      }
+    });
+    return merged;
   });
 
   const [activeSourceLang, setActiveSourceLang] = useState('zh-TW');
@@ -145,8 +154,8 @@ export function SurvivalPhrases() {
         {/* 語言切換器 */}
         <div className="flex items-center gap-2 pt-2">
           <Select value={activeSourceLang} onValueChange={setActiveSourceLang}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
+            <SelectTrigger className="h-8 text-xs min-w-[80px]">
+              {SUPPORTED_LANGS.find(l => l.value === activeSourceLang)?.label}
             </SelectTrigger>
             <SelectContent>
               {SUPPORTED_LANGS.map(l => (
@@ -156,8 +165,8 @@ export function SurvivalPhrases() {
           </Select>
           <div className="text-muted-foreground">➜</div>
           <Select value={activeTargetLang} onValueChange={setActiveTargetLang}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
+            <SelectTrigger className="h-8 text-xs min-w-[80px]">
+              {SUPPORTED_LANGS.find(l => l.value === activeTargetLang)?.label}
             </SelectTrigger>
             <SelectContent>
               {SUPPORTED_LANGS.map(l => (
