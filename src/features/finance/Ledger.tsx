@@ -89,6 +89,12 @@ export function Ledger() {
     document.body.removeChild(link);
   };
 
+  const resetRecords = () => {
+    if (window.confirm('確定要清空所有記帳紀錄嗎？此動作無法復原。')) {
+      saveRecords([]);
+    }
+  };
+
   const totalAmount = records.reduce((sum, r) => sum + r.amount, 0);
 
   return (
@@ -99,16 +105,28 @@ export function Ledger() {
             <span className="text-2xl">💸</span>
             <CardTitle>旅遊簡易記帳本</CardTitle>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={exportToCSV}
-            disabled={records.length === 0}
-            className="h-8 text-xs gap-1"
-          >
-            <Download className="h-3 w-3" />
-            匯出
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToCSV}
+              disabled={records.length === 0}
+              className="h-8 text-xs gap-1"
+            >
+              <Download className="h-3 w-3" />
+              匯出
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetRecords}
+              disabled={records.length === 0}
+              className="h-8 text-xs gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+            >
+              <Trash2 className="h-3 w-3" />
+              重置
+            </Button>
+          </div>
         </div>
         <CardDescription>記錄每一筆消費，輕鬆管理預算</CardDescription>
       </CardHeader>
