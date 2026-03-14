@@ -21,11 +21,8 @@ import { SizeGuide } from '@/features/life/SizeGuide'
 
 // Time
 import { PackingList } from '@/features/time/PackingList'
-import { DualClock } from '@/features/time/DualClock'
-import { VisaInfo } from '@/features/time/VisaInfo'
 
 // Security
-import { EmergencyNumbers } from '@/features/security/EmergencyNumbers'
 import { SurvivalPhrases } from '@/features/security/SurvivalPhrases'
 
 const ALL_CARDS = [
@@ -37,11 +34,8 @@ const ALL_CARDS = [
 
   // ✈️ 行前 (Time/Plan)
   { id: 'packing-list', category: '✈️ 行前', label: '🧳 行李清單', component: <PackingList /> },
-  { id: 'visa-info', category: '✈️ 行前', label: '🛂 簽證資訊', component: <VisaInfo /> },
-  { id: 'dual-clock', category: '✈️ 行前', label: '🕒 雙城時鐘', component: <DualClock /> },
 
   // 🛡️ 安全 (Security)
-  { id: 'emergency-numbers', category: '🛡️ 安全', label: '🆘 緊急電話', component: <EmergencyNumbers /> },
   { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 旅遊字卡', component: <SurvivalPhrases /> },
 
   // 💡 生活 (Life)
@@ -73,11 +67,11 @@ function loadGroups(): Group[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed
     }
   } catch {}
-  // 預設給精選的五個工具
+  // 預設給精選的四個工具
   return [{ 
     id: 'default', 
     name: '預設', 
-    cardIds: ['exchange-rate', 'dual-clock', 'packing-list', 'ledger', 'unit-converter'] 
+    cardIds: ['exchange-rate', 'packing-list', 'ledger', 'unit-converter'] 
   }]
 }
 
