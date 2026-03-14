@@ -29,19 +29,33 @@ import { EmergencyNumbers } from '@/features/security/EmergencyNumbers'
 import { SurvivalPhrases } from '@/features/security/SurvivalPhrases'
 
 const ALL_CARDS = [
-  { id: 'exchange-rate', label: '💱 匯率換算', component: <ExchangeRate /> },
-  { id: 'ledger', label: '📒 旅遊帳本', component: <Ledger /> },
-  { id: 'tipping', label: '🤝 小費計算', component: <Tipping /> },
-  { id: 'tax-refund', label: '🧾 退稅試算', component: <TaxRefund /> },
-  { id: 'unit-converter', label: '🌡️ 單位換算', component: <UnitConverter /> },
-  { id: 'plug-guide', label: '🔌 插頭指南', component: <PlugGuide /> },
-  { id: 'size-guide', label: '👟 尺寸對照', component: <SizeGuide /> },
-  { id: 'dual-clock', label: '🕒 雙城時鐘', component: <DualClock /> },
-  { id: 'packing-list', label: '🧳 行李清單', component: <PackingList /> },
-  { id: 'visa-info', label: '🛂 簽證資訊', component: <VisaInfo /> },
-  { id: 'emergency-numbers', label: '🆘 緊急電話', component: <EmergencyNumbers /> },
-  { id: 'survival-phrases', label: '🗣️ 求生短語', component: <SurvivalPhrases /> },
+  // 💰 財務 (Finance)
+  { id: 'exchange-rate', category: '💰 財務', label: '💱 匯率換算', component: <ExchangeRate /> },
+  { id: 'ledger', category: '💰 財務', label: '📒 旅遊帳本', component: <Ledger /> },
+  { id: 'tipping', category: '💰 財務', label: '🤝 小費計算', component: <Tipping /> },
+  { id: 'tax-refund', category: '💰 財務', label: '🧾 退稅試算', component: <TaxRefund /> },
+
+  // ✈️ 行前 (Time/Plan)
+  { id: 'packing-list', category: '✈️ 行前', label: '🧳 行李清單', component: <PackingList /> },
+  { id: 'visa-info', category: '✈️ 行前', label: '🛂 簽證資訊', component: <VisaInfo /> },
+  { id: 'dual-clock', category: '✈️ 行前', label: '🕒 雙城時鐘', component: <DualClock /> },
+
+  // 🛡️ 安全 (Security)
+  { id: 'emergency-numbers', category: '🛡️ 安全', label: '🆘 緊急電話', component: <EmergencyNumbers /> },
+  { id: 'survival-phrases', category: '🛡️ 安全', label: '🗣️ 求生短語', component: <SurvivalPhrases /> },
+
+  // 💡 生活 (Life)
+  { id: 'unit-converter', category: '💡 生活', label: '🌡️ 單位換算', component: <UnitConverter /> },
+  { id: 'plug-guide', category: '💡 生活', label: '🔌 插頭指南', component: <PlugGuide /> },
+  { id: 'size-guide', category: '💡 生活', label: '👟 尺寸對照', component: <SizeGuide /> },
 ]
+
+// 將卡片依類別分組
+const CARDS_BY_CATEGORY = ALL_CARDS.reduce((acc, card) => {
+  if (!acc[card.category]) acc[card.category] = []
+  acc[card.category].push(card)
+  return acc
+}, {} as Record<string, typeof ALL_CARDS>)
 
 interface Group {
   id: string
@@ -191,23 +205,33 @@ function App() {
                   <Settings className="h-5 w-5" />
                 </Button>
               } />
-              <DialogContent className="max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>設定「{activeGroup.name}」的工具</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3 pt-2">
-                  <p className="text-xs text-muted-foreground">勾選要在這個群組顯示的工具</p>
-                  {ALL_CARDS.map((card) => (
-                    <label key={card.id} className="flex items-center gap-3 cursor-pointer py-1">
-                      <Checkbox
-                        checked={activeGroup.cardIds.includes(card.id)}
-                        onCheckedChange={() => toggleCardInGroup(card.id)}
-                      />
-                      <span className="text-sm">{card.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </DialogContent>
+                            <DialogContent className="max-h-[80vh] flex flex-col">
+                              <DialogHeader>
+                                <DialogTitle>設定「{activeGroup.name}」的工具</DialogTitle>
+                              </DialogHeader>
+                              <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
+                                <p className="text-xs text-muted-foreground">勾選要在這個群組顯示的工具</p>
+                                
+                                {Object.entries(CARDS_BY_CATEGORY).map(([category, cards]) => (
+                                  <div key={category} className="space-y-2">
+                                    <h4 className="text-xs font-semibold text-muted-foreground border-b pb-1">
+                                      {category}
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {cards.map((card) => (
+                                        <label key={card.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors">
+                                          <Checkbox
+                                            checked={activeGroup.cardIds.includes(card.id)}
+                                            onCheckedChange={() => toggleCardInGroup(card.id)}
+                                          />
+                                          <span className="text-sm truncate">{card.label}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </DialogContent>
             </Dialog>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
