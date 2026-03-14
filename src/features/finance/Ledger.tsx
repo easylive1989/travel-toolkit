@@ -164,7 +164,7 @@ export function Ledger() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs ml-1">{t('ledger.currency')}</Label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={(val) => val && setCurrency(val)}>
                 <SelectTrigger className="bg-muted/30 h-10">
                   <SelectValue />
                 </SelectTrigger>

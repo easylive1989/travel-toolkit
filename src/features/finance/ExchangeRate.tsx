@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
 
 const CURRENCIES = [
@@ -45,7 +45,7 @@ export function ExchangeRate() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label className="text-xs">{t('exchange.base')}</Label>
-            <Select value={base} onValueChange={setBase}>
+            <Select value={base} onValueChange={(val) => val && setBase(val)}>
               <SelectTrigger className="text-xs">
                 {getCurrencyLabel(base)}
               </SelectTrigger>
@@ -56,7 +56,7 @@ export function ExchangeRate() {
           </div>
           <div className="space-y-2">
             <Label className="text-xs">{t('exchange.target')}</Label>
-            <Select value={target} onValueChange={setTarget}>
+            <Select value={target} onValueChange={(val) => val && setTarget(val)}>
               <SelectTrigger className="text-xs">
                 {getCurrencyLabel(target)}
               </SelectTrigger>

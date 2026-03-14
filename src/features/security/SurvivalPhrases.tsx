@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Volume2, Plus, Trash2, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTranslation } from 'react-i18next';
@@ -196,7 +196,7 @@ export function SurvivalPhrases() {
         </div>
         
         <div className="flex items-center gap-2 pt-2">
-          <Select value={activeSourceLang} onValueChange={setActiveSourceLang}>
+          <Select value={activeSourceLang} onValueChange={(val) => val && setActiveSourceLang(val)}>
             <SelectTrigger className="h-8 text-xs min-w-[80px]">
               {getLangLabel(activeSourceLang)}
             </SelectTrigger>
@@ -207,7 +207,7 @@ export function SurvivalPhrases() {
             </SelectContent>
           </Select>
           <div className="text-muted-foreground">➜</div>
-          <Select value={activeTargetLang} onValueChange={setActiveTargetLang}>
+          <Select value={activeTargetLang} onValueChange={(val) => val && setActiveTargetLang(val)}>
             <SelectTrigger className="h-8 text-xs min-w-[80px]">
               {getLangLabel(activeTargetLang)}
             </SelectTrigger>
