@@ -17,28 +17,35 @@ interface Flashcard {
 const STORAGE_KEY = 'travel-toolkit-flashcards';
 
 const DEFAULT_CARDS: Flashcard[] = [
-  // 中文 -> 日語
-  { id: '1', sourceText: '你好', targetText: 'こんにちは (Konnichiwa)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  { id: '2', sourceText: '請問廁所在哪裡？', targetText: 'トイレはどこですか？', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  { id: '3', sourceText: '謝謝', targetText: 'ありがとうございます', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
-  // 中文 -> 韓語
-  { id: '4', sourceText: '你好', targetText: '안녕하세요 (Annyeonghaseyo)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  { id: '5', sourceText: '多少錢？', targetText: '얼마예요? (Eolmayeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
-  // 中文 -> 英語
-  { id: '6', sourceText: '你好', targetText: 'Hello', sourceLang: 'zh-TW', targetLang: 'en-US' },
-  { id: '7', sourceText: '請給我這個', targetText: 'I would like this, please.', sourceLang: 'zh-TW', targetLang: 'en-US' },
+  // 中文 -> 日文
+  { id: 'jp-1', sourceText: '你好', targetText: 'こんにちは (Konnichiwa)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  { id: 'jp-2', sourceText: '謝謝', targetText: 'ありがとうございます (Arigatou gozaimasu)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  { id: 'jp-3', sourceText: '這個多少錢？', targetText: 'いくらですか？ (Ikura desu ka?)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  { id: 'jp-4', sourceText: '請問廁所在哪裡？', targetText: 'トイレはどこですか？ (Toire wa doko desu ka?)', sourceLang: 'zh-TW', targetLang: 'ja-JP' },
+  
+  // 中文 -> 韓文
+  { id: 'kr-1', sourceText: '你好', targetText: '안녕하세요 (Annyeonghaseyo)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  { id: 'kr-2', sourceText: '謝謝', targetText: '감사합니다 (Gamsahamnida)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  { id: 'kr-3', sourceText: '這個多少錢？', targetText: '얼마예요? (Eolmayeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  { id: 'kr-4', sourceText: '請問廁所在哪裡？', targetText: '화장실이 어디예요? (Hwajangsil-i eodiyeyo?)', sourceLang: 'zh-TW', targetLang: 'ko-KR' },
+  
+  // 中文 -> 英文
+  { id: 'en-1', sourceText: '你好', targetText: 'Hello', sourceLang: 'zh-TW', targetLang: 'en-US' },
+  { id: 'en-2', sourceText: '謝謝', targetText: 'Thank you', sourceLang: 'zh-TW', targetLang: 'en-US' },
+  { id: 'en-3', sourceText: '這個多少錢？', targetText: 'How much is this?', sourceLang: 'zh-TW', targetLang: 'en-US' },
+  { id: 'en-4', sourceText: '請問廁所在哪裡？', targetText: 'Where is the restroom?', sourceLang: 'zh-TW', targetLang: 'en-US' },
 ];
 
 const SUPPORTED_LANGS = [
   { label: '中文', value: 'zh-TW' },
-  { label: '日語', value: 'ja-JP' },
-  { label: '韓語', value: 'ko-KR' },
-  { label: '英語', value: 'en-US' },
-  { label: '法語', value: 'fr-FR' },
-  { label: '德語', value: 'de-DE' },
-  { label: '義大利語', value: 'it-IT' },
-  { label: '泰語', value: 'th-TH' },
-  { label: '越南語', value: 'vi-VN' },
+  { label: '日文', value: 'ja-JP' },
+  { label: '韓文', value: 'ko-KR' },
+  { label: '英文', value: 'en-US' },
+  { label: '法文', value: 'fr-FR' },
+  { label: '德文', value: 'de-DE' },
+  { label: '義大利文', value: 'it-IT' },
+  { label: '泰文', value: 'th-TH' },
+  { label: '越南文', value: 'vi-VN' },
 ];
 
 export function SurvivalPhrases() {
