@@ -4,21 +4,19 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+const UNIT_TYPES = [
+  { id: 'temp', label: '溫度 (°C ↔ °F)', units: ['°C', '°F'] },
+  { id: 'dist', label: '距離 (km ↔ mi)', units: ['km', 'mi'] },
+  { id: 'weight', label: '重量 (kg ↔ lb)', units: ['kg', 'lb'] },
+];
+
 export function UnitConverter() {
   const [type, setType] = useState('temp');
   const [val1, setVal1] = useState('');
   const [val2, setVal2] = useState('');
 
-  const getLabels = () => {
-    switch(type) {
-      case 'temp': return ['℃', '℉'];
-      case 'dist': return ['km', 'mi'];
-      case 'weight': return ['kg', 'lb'];
-      default: return ['', ''];
-    }
-  };
-
-  const [l1, l2] = getLabels();
+  const activeType = UNIT_TYPES.find(t => t.id === type) || UNIT_TYPES[0];
+  const [l1, l2] = activeType.units;
 
   const handleTypeChange = (val: string) => {
     setType(val);
@@ -65,11 +63,13 @@ export function UnitConverter() {
         <div className="space-y-2">
           <Label>轉換類型</Label>
           <Select value={type} onValueChange={(val) => val && handleTypeChange(val)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              {activeType.label}
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="temp">溫度 (℃ ↔ ℉)</SelectItem>
-              <SelectItem value="dist">距離 (km ↔ mi)</SelectItem>
-              <SelectItem value="weight">重量 (kg ↔ lb)</SelectItem>
+              {UNIT_TYPES.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
