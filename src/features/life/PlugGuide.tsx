@@ -29,7 +29,9 @@ export function PlugGuide() {
         <div className="space-y-2">
           <Label>選擇國家/地區</Label>
           <Select value={country} onValueChange={(val) => val && setCountry(val)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              {PLUG_GUIDE[country].name}
+            </SelectTrigger>
             <SelectContent>
               {Object.keys(PLUG_GUIDE).map(k => (
                 <SelectItem key={k} value={k}>{PLUG_GUIDE[k].name}</SelectItem>
