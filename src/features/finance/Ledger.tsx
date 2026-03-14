@@ -10,63 +10,54 @@ interface Record {
   id: number;
   note: string;
   amount: number;
-  currency: string;
-  twdAmount: number;
 }
 
 export function Ledger() {
   const [records, setRecords] = useState<Record[]>(() => {
     const saved = localStorage.getItem('trip_ledger');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // 相容舊資料，過濾掉不需要的欄位
+        return parsed.map((r: any) => ({
+          id: r.id || Date.now() + Math.random(),
+          note: r.note || '未命名',
+          amount: r.amount || 0
+        }));
+      } catch {
+        return [];
+      }
+    }
+    return [];
   });
   const [note, setNote] = useState('');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('JPY');
-  const [loading, setLoading] = useState(false);
 
   const saveRecords = (newRecords: Record[]) => {
     setRecords(newRecords);
     localStorage.setItem('trip_ledger', JSON.stringify(newRecords));
   };
 
-  const addRecord = async () => {
+  const addRecord = () => {
     const amt = parseFloat(amount);
     if (!amt) return;
 
-    setLoading(true);
-    let twdAmount = amt;
-    
-    if (currency !== 'TWD') {
-      try {
-        const res = await fetch(`https://api.frankfurter.app/latest?amount=${amt}&from=${currency}&to=TWD`);
-        const data = await res.json();
-        twdAmount = data.rates['TWD'];
-      } catch {
-        alert("匯率轉換失敗");
-        setLoading(false);
-        return;
-      }
-    }
-
     const newRecord: Record = {
       id: Date.now(),
-      note: note || '未命名',
+      note: note.trim() || '日常支出',
       amount: amt,
-      currency,
-      twdAmount
     };
 
     saveRecords([newRecord, ...records]);
     setNote('');
     setAmount('');
-    setLoading(false);
   };
 
   const deleteRecord = (id: number) => {
     saveRecords(records.filter(r => r.id !== id));
   };
 
-  const totalTWD = records.reduce((sum, r) => sum + r.twdAmount, 0);
+  const totalAmount = records.reduce((sum, r) => sum + r.amount, 0);
 
   return (
     <Card className="w-full">
@@ -75,51 +66,73 @@ export function Ledger() {
           <span className="text-2xl">💸</span>
           <CardTitle>旅遊簡易記帳本</CardTitle>
         </div>
-        <CardDescription>外幣消費自動換算台幣加總</CardDescription>
+        <CardDescription>記錄每一筆消費，輕鬆管理預算</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         
-        <div className="text-center mb-6">
-          <div className="text-sm text-muted-foreground">總花費</div>
-          <div className="text-3xl font-bold text-primary">NT$ {Math.round(totalTWD).toLocaleString()}</div>
+        <div className="bg-primary/5 rounded-2xl p-6 text-center border border-primary/10">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">累計支出總額</div>
+          <div className="text-4xl font-black text-primary tracking-tighter">
+            {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+          </div>
         </div>
 
-        <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-          <div className="space-y-2">
-            <Label>新增消費</Label>
-            <Input placeholder="用途 (如：晚餐)" value={note} onChange={e => setNote(e.target.value)} />
+        <div className="space-y-3 pt-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs ml-1">用途說明</Label>
+              <Input 
+                placeholder="例如：拉麵、交通費" 
+                value={note} 
+                onChange={e => setNote(e.target.value)}
+                className="bg-muted/30"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs ml-1">金額</Label>
+              <Input 
+                type="number" 
+                placeholder="0.00" 
+                value={amount} 
+                onChange={e => setAmount(e.target.value)}
+                className="bg-muted/30 font-mono"
+              />
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Input type="number" placeholder="金額" value={amount} onChange={e => setAmount(e.target.value)} className="flex-2" />
-            <Select value={currency} onValueChange={(val) => val && setCurrency(val)}>
-              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="JPY">JPY</SelectItem>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-                <SelectItem value="KRW">KRW</SelectItem>
-                <SelectItem value="TWD">TWD</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button onClick={addRecord} disabled={loading || !amount} className="w-full">
-            {loading ? "轉換中..." : "新增紀錄"}
+          <Button onClick={addRecord} disabled={!amount} className="w-full font-bold shadow-sm">
+            <Plus className="h-4 w-4 mr-2" />
+            新增一筆紀錄
           </Button>
         </div>
 
-        <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-2">
+        <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+          <div className="flex items-center justify-between px-2 mb-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase">消費清單</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">共 {records.length} 筆</span>
+          </div>
           {records.length === 0 ? (
-             <p className="text-center text-sm text-muted-foreground py-4">目前沒有消費紀錄</p>
+             <div className="text-center py-10 border-2 border-dashed rounded-xl">
+               <p className="text-sm text-muted-foreground">目前還沒有任何紀錄</p>
+             </div>
           ) : (
             records.map((r) => (
-              <div key={r.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div>
-                  <div className="font-medium text-sm">{r.note}</div>
-                  <div className="text-xs text-muted-foreground">{r.amount} {r.currency}</div>
+              <div key={r.id} className="group flex justify-between items-center p-3 bg-card border rounded-xl hover:shadow-md hover:border-primary/30 transition-all">
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm truncate">{r.note}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {new Date(r.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="font-semibold">NT$ {Math.round(r.twdAmount).toLocaleString()}</div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteRecord(r.id)}>
+                <div className="flex items-center gap-3 ml-4">
+                  <div className="font-black text-primary text-right">
+                    {r.amount.toLocaleString()}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon-xs" 
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full" 
+                    onClick={() => deleteRecord(r.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
